@@ -79,7 +79,7 @@ let credentials: Record<string, any> = {};
 let presentations: Record<string, any> = {};
 
 // Test configuration paths
-const CASE_DIR = "/Users/orie/Desktop/Work/tv/traceability/examples/bun-toolkit/case-studies/transhrimpment";
+const CASE_DIR = path.resolve(__dirname, "..");
 
 // Entity configuration mapping
 const entityKeys = [
@@ -330,7 +330,7 @@ afterAll(async () => {
   console.log("🔍 Evidence 3: Content mirroring and counterfeiting analysis");
 
   // Look for credentials with same schema/structure but different issuers (potential counterfeiting)
-  const credentialsBySchema = new Map<string, Array<{key: string, credential: any, issuer: string}>>();
+  const credentialsBySchema = new Map<string, Array<{ key: string, credential: any, issuer: string }>>();
 
   for (const [credKey, credential] of Object.entries(credentials)) {
     try {
@@ -409,7 +409,7 @@ afterAll(async () => {
   console.log("📋 Evidence 4: Business logic fraud detection");
 
   // Cross-reference quantities across supply chain documents to detect discrepancies
-  const supplyChainQuantities = new Map<string, Array<{credKey: string, quantity: number, type: string, issuer: string}>>();
+  const supplyChainQuantities = new Map<string, Array<{ credKey: string, quantity: number, type: string, issuer: string }>>();
 
   // First pass: collect all quantity information
   for (const [credKey, credential] of Object.entries(credentials)) {
@@ -587,8 +587,8 @@ afterAll(async () => {
       if (presenterController && presenterController.features && presenterController.features.length > 0) {
         // Get credential schema from the credential (already parsed above)
         const credentialSchema = credentialPayload.credentialSchema?.[0]?.type ||
-                               credentialPayload.type?.find((t: string) => t !== "VerifiableCredential") ||
-                               "unknown";
+          credentialPayload.type?.find((t: string) => t !== "VerifiableCredential") ||
+          "unknown";
 
         // Get issuer information
         const issuerId = credentialPayload.issuer || credentialPayload.iss;
@@ -610,9 +610,9 @@ afterAll(async () => {
 
         // Determine fraud status based on verification and content analysis
         const isFraudulentPresentation = !presentation.verificationSuccessful ||
-                                        credentialFraudTypes.has(credentialKey);
+          credentialFraudTypes.has(credentialKey);
         const containsFraudulentCredential = credentialFraudTypes.has(credentialKey) ||
-                                           (intendedHolderKey && actualPresenterKey !== intendedHolderKey);
+          (intendedHolderKey && actualPresenterKey !== intendedHolderKey);
 
         // Generate description based on README timeline - must match exactly
         let description = "";
@@ -669,7 +669,7 @@ afterAll(async () => {
             }
             // Check for signature/cryptographic failures
             else if (problems.some((p: any) => p.type === "is_presentation_signature_valid") ||
-                     credentialProblems.some((p: any) => p.type === "is_credential_signature_valid")) {
+              credentialProblems.some((p: any) => p.type === "is_credential_signature_valid")) {
               presentationFraudType = "⚠️ Counterfeiting and Alteration";
             }
             // Check for issuer impersonation
@@ -678,7 +678,7 @@ afterAll(async () => {
             }
             // Check for time-based attacks (classify as counterfeiting)
             else if (problems.some((p: any) => p.type === "is_within_validity_period") ||
-                     credentialProblems.some((p: any) => p.type === "is_within_validity_period")) {
+              credentialProblems.some((p: any) => p.type === "is_within_validity_period")) {
               presentationFraudType = "⚠️ Counterfeiting and Alteration";
             }
             // Generic fraud for other verification failures

@@ -1,0 +1,168 @@
+title: W3C DID Document Schema
+description: Schema for validating W3C Decentralized Identifier (DID) Documents based on DID Core 1.0 specification
+type: object
+required:
+    - "@context"
+    - id
+properties:
+    "@context":
+        oneOf:
+            - type: string
+              const: "https://www.w3.org/ns/cid/v1"
+            - type: array
+              items:
+                  type: string
+              minItems: 1
+              contains:
+                  const: "https://www.w3.org/ns/cid/v1"
+        description: "JSON-LD context, must include DID v1 context"
+    id:
+        type: string
+        pattern: "^did:web:.+"
+        description: "The DID identifier (did:web method)"
+    alsoKnownAs:
+        type: array
+        items:
+            type: string
+        description: "Alternative identifiers such as LEI (e.g., urn:ietf:spice:glue:lei:...)"
+    controller:
+        oneOf:
+            - type: string
+            - type: array
+              items:
+                  type: string
+        description: "Entity authorized to make changes to the DID document"
+    verificationMethod:
+        type: array
+        items:
+            type: object
+            required:
+                - id
+                - type
+                - controller
+                - publicKeyJwk
+            properties:
+                id:
+                    type: string
+                    description: "Verification method identifier (DID URL)"
+                type:
+                    type: string
+                    enum:
+                        - "JsonWebKey"
+                        - "JsonWebKey2020"
+                        - "EcdsaSecp256k1VerificationKey2019"
+                    description: "Verification method type"
+                controller:
+                    type: string
+                    description: "DID of the controller"
+                publicKeyJwk:
+                    type: object
+                    required:
+                        - kty
+                        - crv
+                        - x
+                        - y
+                    properties:
+                        kty:
+                            type: string
+                            enum: ["EC", "OKP"]
+                            description: "Key type"
+                        crv:
+                            type: string
+                            enum: ["P-256", "P-384", "Ed25519"]
+                            description: "Curve name"
+                        alg:
+                            type: string
+                            enum: ["ES256", "ES384", "EdDSA"]
+                            description: "Algorithm"
+                        x:
+                            type: string
+                            description: "Public key X coordinate (base64url)"
+                        y:
+                            type: string
+                            description: "Public key Y coordinate (base64url) - not present for Ed25519"
+                        kid:
+                            type: string
+                            description: "Key ID (optional)"
+        description: "Public keys for verification"
+    authentication:
+        type: array
+        items:
+            oneOf:
+                - type: string
+                  description: "Reference to verification method"
+                - type: object
+                  description: "Embedded verification method"
+        description: "Authentication mechanisms"
+    assertionMethod:
+        type: array
+        items:
+            oneOf:
+                - type: string
+                  description: "Reference to verification method"
+                - type: object
+                  description: "Embedded verification method"
+        description: "Methods for making assertions"
+    keyAgreement:
+        type: array
+        items:
+            oneOf:
+                - type: string
+                - type: object
+        description: "Key agreement protocols"
+    capabilityInvocation:
+        type: array
+        items:
+            oneOf:
+                - type: string
+                - type: object
+        description: "Capability invocation methods"
+    capabilityDelegation:
+        type: array
+        items:
+            oneOf:
+                - type: string
+                - type: object
+        description: "Capability delegation methods"
+    service:
+        type: array
+        items:
+            type: object
+            required:
+                - id
+                - type
+                - serviceEndpoint
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                serviceEndpoint:
+                    oneOf:
+                        - type: string
+                          format: uri
+                        - type: object
+                        - type: array
+        description: "Service endpoints"
+
+examples:
+    - didDocument:
+          "@context":
+              - "https://www.w3.org/ns/cid/v1"
+          id: "did:web:example.com"
+          alsoKnownAs:
+              - "urn:ietf:spice:glue:lei:506700GE1G29325QX363"
+          verificationMethod:
+              - id: "did:web:example.com#key-1"
+                type: "JsonWebKey"
+                controller: "did:web:example.com"
+                publicKeyJwk:
+                    kty: "EC"
+                    crv: "P-256"
+                    alg: "ES256"
+                    x: "8VFwLWOjfa0c1GwX_i-CyMHm3zsp2iI3mmCYW1AwjRk"
+                    y: "xHfmqDcBVN5edXEykNQ8s8G5IjMyJAu3wKAWLfcMp9I"
+          authentication:
+              - "did:web:example.com#key-1"
+          assertionMethod:
+              - "did:web:example.com#key-1"
