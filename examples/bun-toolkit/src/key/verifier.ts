@@ -9,7 +9,7 @@ export async function verifier(publicKey: PublicKey): Promise<Verifier> {
   const cryptoKey = await crypto.subtle.importKey("jwk", publicKey, {
     name: fullySpecifiedAlgorithms[publicKey.alg].name,
     namedCurve: fullySpecifiedAlgorithms[publicKey.alg].namedCurve
-  }, true, publicKey.key_ops);
+  }, true, publicKey.key_ops || ["verify"]);
 
   return {
     verify: async (data: Uint8Array, signature: Uint8Array) => {

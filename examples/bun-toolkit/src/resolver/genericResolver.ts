@@ -1,10 +1,8 @@
 import type { Controller } from "../controller/controller";
 import type { PublicKey } from "../types";
 import type { Schema } from "ajv";
-import { createControllerResolver } from "./controllerResolver";
-import { createSchemaResolver } from "./schemaResolver";
 import { createPublicKeyResolver } from "./publicKeyResolver";
-import Ajv, { ValidateFunction } from "ajv";
+import Ajv, { type ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
 
 export interface GenericResolver {
@@ -58,7 +56,43 @@ export const createGenericResolver = (
 
   return {
     resolveController: async (id: string) => {
-      const controller = controllerLookup[id];
+      let controller = controllerLookup[id];
+
+      // If not in cache, try to fetch did:web documents
+      if (!controller && id.startsWith('did:web:')) {
+        // Extract the DID from the key reference (remove fragment)
+        const did = id.split('#')[0];
+
+        if (did) {
+          // Convert did:web to HTTPS URL
+          // did:web:example.com -> https://example.com/.well-known/did.json
+          // did:web:example.com:path:to:doc -> https://example.com/path/to/doc/did.json
+          const didParts = did.replace('did:web:', '').split(':');
+          const domain = didParts[0];
+          const pathParts = didParts.slice(1);
+
+          let url: string;
+          if (pathParts.length > 0) {
+            const path = pathParts.join('/');
+            url = `https://${domain}/${path}/did.json`;
+          } else {
+            url = `https://${domain}/.well-known/did.json`;
+          }
+
+          try {
+            const response = await fetch(url);
+            if (response.ok) {
+              const fetchedController = await response.json() as any;
+              controller = fetchedController;
+              // Cache it for future use
+              controllerLookup[did] = fetchedController;
+            }
+          } catch (error) {
+            // Fetch failed, controller will remain undefined
+          }
+        }
+      }
+
       if (!controller) {
         throw new Error(`Controller not found for id: ${id}`);
       }
@@ -66,12 +100,15 @@ export const createGenericResolver = (
       const assertionKeys: Array<[string, PublicKey]> = [];
       const authenticationKeys: Array<[string, PublicKey]> = [];
 
-      for (const verificationMethod of controller.verificationMethod) {
-        if (controller.assertionMethod?.includes(verificationMethod.id)) {
-          assertionKeys.push([verificationMethod.id, verificationMethod.publicKeyJwk]);
-        }
-        if (controller.authentication?.includes(verificationMethod.id)) {
-          authenticationKeys.push([verificationMethod.id, verificationMethod.publicKeyJwk]);
+      // Safely iterate over verificationMethod array
+      if (controller.verificationMethod && Array.isArray(controller.verificationMethod)) {
+        for (const verificationMethod of controller.verificationMethod) {
+          if (controller.assertionMethod?.includes(verificationMethod.id)) {
+            assertionKeys.push([verificationMethod.id, verificationMethod.publicKeyJwk]);
+          }
+          if (controller.authentication?.includes(verificationMethod.id)) {
+            authenticationKeys.push([verificationMethod.id, verificationMethod.publicKeyJwk]);
+          }
         }
       }
 

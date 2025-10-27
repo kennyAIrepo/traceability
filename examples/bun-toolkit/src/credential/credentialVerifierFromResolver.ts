@@ -22,10 +22,19 @@ export const credentialVerifierFromResolver = async (
         throw new Error('Credential must have an issuer');
       }
 
+      // Extract issuer DID - handle both string and object formats
+      const issuerDid = typeof credential.issuer === 'string'
+        ? credential.issuer
+        : credential.issuer.id;
+
+      if (!issuerDid) {
+        throw new Error('Credential issuer must have an id');
+      }
+
       const assertionKeyId = header.kid;
 
-      if (!assertionKeyId.startsWith(credential.issuer)) {
-        throw new Error(`Credential issuer ${credential.issuer} does not match assertion key ${assertionKeyId}`);
+      if (!assertionKeyId.startsWith(issuerDid)) {
+        throw new Error(`Credential issuer ${issuerDid} does not match assertion key ${assertionKeyId}`);
       }
 
       // Resolve the issuer's controller document
