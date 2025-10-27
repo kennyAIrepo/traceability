@@ -2,6 +2,9 @@
   "name": "entity_identifiers",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "vc-cli": "bun src/cli/cli.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/js-yaml": "^4.0.9"
